@@ -76,6 +76,7 @@ module.exports = async ({ WebSocket, fs, EventEmitter, config:MainConfig, readJS
 		wsOpen () {
 			console.log('Socket open');
 			this.sendJoin();
+			this.emit('websocket:open', this);
 		}
 
 		wsMessage (message) {
@@ -85,11 +86,12 @@ module.exports = async ({ WebSocket, fs, EventEmitter, config:MainConfig, readJS
 				return console.error("[ERROR] in parsing a message from the server. ", message);
 			}
 
-			console.log(args);
+			this.emit('websocket:message', args, this);
 		}
 
 		wsError (err) {
 			console.error('[ERROR] Error in client with username of "' + this.username + '" ', err.toString());
+			this.emit('websocket:error', err, this);
 		}
 	}
 
