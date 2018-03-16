@@ -22,7 +22,7 @@ module.exports = async (Data) => {
 			this.password = password;
 
 			this._ws = null;
-			
+			this._pingInterval = null;
 			this._WebSocket = WebSocket;
 
 			this.modules = {};
@@ -77,6 +77,8 @@ module.exports = async (Data) => {
 
 		killSocket () {
 			this.emit('pre:close:websocket', this);
+			clearInterval(this._pingInterval);
+			this._pingInterval = null;
 			this._ws.close();
 			this._ws = null;
 			this.emit('after:close:websocket', this);
@@ -104,9 +106,13 @@ module.exports = async (Data) => {
 				channel: this.channel
 			});
 		}
+		sendPing () {
+			return this.send({ cmd: 'ping' });
+		}
 
 		wsOpen () {
 			console.log('Socket open');
+			this._pingInterval = setInterval(_ => this.sendPing(), 50000);
 			this.sendJoin();
 			this.emit('websocket:open', this);
 		}
