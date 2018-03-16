@@ -1,5 +1,6 @@
-module.exports = async ({ WebSocket, fs, EventEmitter, config:MainConfig, readJSON, writeJSON }) => {
-	console.log(MainConfig);
+module.exports = async (Data) => {
+	let { readJSON, EventEmitter, WebSocket, fs } = Data;
+	
 	try {
 		var ConnectionConfig = await readJSON(__dirname + "/config.json");
 	} catch (err) {
@@ -24,12 +25,29 @@ module.exports = async ({ WebSocket, fs, EventEmitter, config:MainConfig, readJS
 			
 			this._WebSocket = WebSocket;
 
-			this.loadModules();
-			this.connect();
+			this.modules = {};
+
+			this.loadModules()
+				.then(_ => this.connect())
+				.catch(err => console.error('[ERROR] Problem with reading directory when loading the modules!', err));
 		}
 
 		loadModules () {
-			console.log('[INFO] Module loading is not implemented yet');
+			return new Promise((resolve, reject) => fs.readdir(__dirname + '/modules/', (err, files) => {
+				if (err) {
+					return reject(err);
+				}
+				
+				resolve(
+					files
+						.filter(file => file.endsWith('.js'))
+						.map(file => require(__dirname + '/modules/' + file))
+						.forEach(async mod => {
+							this.modules[mod.name || file] = mod
+							await mod.run(Data, this);
+						})
+				);
+			}))
 		}
 
 		connect () {
