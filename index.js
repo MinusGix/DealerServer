@@ -27,6 +27,25 @@ function writeJSON (filename) {
 	console.log("[WARN] writeJSON has not been made yet.");
 }
 
+function loadModules (Data) {
+	return new Promise((resolve, reject) => {
+		fs.readdir(__dirname + '/modules', (err, files) => {
+			if (err) {
+				return reject(err);
+			}
+			resolve(
+				files
+				.filter(file => file.endsWith('.js'))
+				.map(async file => {
+					let mod = await require(__dirname + '/modules/' + file)(Data)
+					mod.__filename = file;
+					return mod;
+				})	
+			);
+		});
+	})
+}
+
 try {
 	var Config = await readJSON('JSON/config.json');
 } catch (err) {
@@ -38,8 +57,18 @@ let Data = {
 	WebSocket,
 	fs,
 	EventEmitter,
-	readJSON
+	readJSON,
+	Modules: {}
 };
+
+try {
+	let modules = await loadModules();
+	modules.forEach(mod => Data.Modules[mod.name || mod.__filename] = mod);
+} catch (err) {
+	console.error('[ERROR] in loading main modules!');
+	throw err;
+}
+console.log('[INFO] Main Modules loaded!');
 
 try {
 	var Connection = (await require('./Connection')(Data)).Connection;
