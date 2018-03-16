@@ -32,21 +32,27 @@ module.exports = async (Data) => {
 				.catch(err => console.error('[ERROR] Problem with reading directory when loading the modules!', err));
 		}
 
+		async declareModule (mod) {
+			let name = mod.name;
+			this.modules[name] = mod;
+			
+			await mod.run(Data, this);
+
+			return this; // for chaining
+		}
+
 		loadModules () {
 			return new Promise((resolve, reject) => fs.readdir(__dirname + '/modules/', (err, files) => {
 				if (err) {
 					return reject(err);
 				}
-				
-				resolve(
-					files
+
+				files
 						.filter(file => file.endsWith('.js'))
 						.map(file => require(__dirname + '/modules/' + file))
-						.forEach(async mod => {
-							this.modules[mod.name || file] = mod
-							await mod.run(Data, this);
-						})
-				);
+						.forEach(this.declareModule);
+				
+				resolve();
 			}))
 		}
 
