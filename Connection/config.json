@@ -1,0 +1,8 @@
+{
+	"defaults": {
+		"websocketURL": "wss://hack.chat/chat-ws",
+		"channel": "botDev",
+		"username": "Transferance",
+		"password": "Transfer the communism away from me please."
+	}
+}
