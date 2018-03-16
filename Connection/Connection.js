@@ -32,6 +32,10 @@ module.exports = async (Data) => {
 				.catch(err => console.error('[ERROR] Problem with reading directory when loading the modules!', err));
 		}
 
+		cdeclareModule (self) {
+			return self.declareModule.bind(self);
+		}
+
 		async declareModule (mod) {
 			let name = mod.name;
 			this.modules[name] = mod;
@@ -48,9 +52,9 @@ module.exports = async (Data) => {
 				}
 
 				files
-						.filter(file => file.endsWith('.js'))
-						.map(file => require(__dirname + '/modules/' + file))
-						.forEach(this.declareModule);
+					.filter(file => file.endsWith('.js'))
+					.map(file => require(__dirname + '/modules/' + file))
+					.forEach(this.cdeclareModule(this));
 				
 				resolve();
 			}))
@@ -67,11 +71,15 @@ module.exports = async (Data) => {
 			this._ws.on('open', this.wsOpen.bind(this));
 			this._ws.on('message', this.wsMessage.bind(this));
 			this._ws.on('error', this.wsError.bind(this));
+
+			this.emit('after:connecting', this);
 		}
 
 		killSocket () {
+			this.emit('pre:close:websocket', this);
 			this._ws.close();
 			this._ws = null;
+			this.emit('after:close:websocket', this);
 		}
 
 		send (obj) {
@@ -111,6 +119,8 @@ module.exports = async (Data) => {
 			}
 
 			this.emit('websocket:message', args, this);
+
+			this.emit('websocket:message:' + args.cmd, args, this);
 		}
 
 		wsError (err) {
