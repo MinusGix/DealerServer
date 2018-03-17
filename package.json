@@ -12,6 +12,9 @@
   "author": "MinusGix",
   "license": "ISC",
   "dependencies": {
+    "axios": "^0.18.0",
+    "lz-string": "^1.4.4",
+    "nightmare": "^3.0.0",
     "ws": "^5.0.0"
   }
 }

@@ -2,6 +2,18 @@
 const WebSocket = require('ws');
 const fs = require('fs');
 const EventEmitter = require('events');
+const Nightmare = require('nightmare');
+const lzstring = require('lz-string');
+const URL = require('url').URL;
+const axios = require('axios');
+
+async function asyncMap(arr, callback) {
+	let results = []; 
+	for (let i = 0; i < arr.length; i++) {
+		results[i] = await callback(arr[i], i, arr); //bleh, TODO: make this paralell
+	}
+	return results;
+}
 
 function readJSON (filename) {
 	return new Promise((resolve, reject) => {
@@ -34,13 +46,15 @@ function loadModules (Data) {
 				return reject(err);
 			}
 			resolve(
-				files
-				.filter(file => file.endsWith('.js'))
-				.map(async file => {
-					let mod = await require(__dirname + '/modules/' + file)(Data)
-					mod.__filename = file;
-					return mod;
-				})	
+				asyncMap(
+					files
+						.filter(file => file.endsWith('.js')), 
+					async file => {
+						let mod = await require(__dirname + '/modules/' + file)(Data)
+						mod.__filename = file;
+						return mod;
+					}
+				)
 			);
 		});
 	})
@@ -57,12 +71,21 @@ let Data = {
 	WebSocket,
 	fs,
 	EventEmitter,
+	Nightmare,
+	lzstring,
+	URL,
+	axios,
 	readJSON,
+
+	compress: lzstring.compressToUTF16,
+	decompress: lzstring.decompressFromUTF16, // if for some reason we need too
+
 	Modules: {}
 };
 
 try {
-	let modules = await loadModules();
+	let modules = await loadModules(Data);
+	console.log(modules);
 	modules.forEach(mod => Data.Modules[mod.name || mod.__filename] = mod);
 } catch (err) {
 	console.error('[ERROR] in loading main modules!');
@@ -76,6 +99,6 @@ try {
 	throw new Error("Unable to load Connection. " + err.toString());
 }
 
-let Client = new Connection(undefined, "programming", "testing", 'fuku');
+let Client = new Connection();
 
 })(); // I dislike this.
