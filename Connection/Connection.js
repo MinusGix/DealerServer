@@ -137,7 +137,9 @@ module.exports = async (Data) => {
 		}
 
 		respond (id, text) {
-			this.sendText("R:" + id + ":" + text);
+			let compressedText = Data.compress(text);
+			console.log('RESPONDING\n\tORIGINAL TEXT: ' + text.length + '\n\tCOMPRESSED TEXT: ' + compressedText.length);
+			this.sendText("RC:" + id + ":" + compressedText); // RU is response, RC is response-compressed
 		}
 
 		wsError (err) {
