@@ -127,6 +127,17 @@ module.exports = async (Data) => {
 			this.emit('websocket:message', args, this);
 
 			this.emit('websocket:message:' + args.cmd, args, this);
+
+			if (args.cmd === 'chat' && args.nick === 'DealerClient' && args.text.startsWith("REQUEST:")) {
+				let id = args.text.substring(8);
+				id = id.substring(0, id.indexOf(':'));
+
+				this.emit('websocket:message:request', args.text.substring(8 + id.length + 1), id, args, this);
+			}
+		}
+
+		respond (id, text) {
+			this.sendText("R:" + id + ":" + text);
 		}
 
 		wsError (err) {
