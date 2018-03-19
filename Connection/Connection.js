@@ -137,9 +137,19 @@ module.exports = async (Data) => {
 		}
 
 		respond (id, text) {
+			let isJSON = typeof(text) === 'object';
+
+			if (isJSON) {
+				try {
+					text = JSON.stringify(text);
+				} catch (error) {
+					// todo: make it tell the client to kill off that request and inform the user
+					return console.error('[ERROR] in parsing json. id:', id, '\ntext(object):', text, '\nerror:', error);
+				}
+			}
 			let compressedText = Data.compress(text);
 			console.log('RESPONDING\n\tORIGINAL TEXT: ' + text.length + '\n\tCOMPRESSED TEXT: ' + compressedText.length);
-			this.sendText("RC:" + id + ":" + compressedText); // RU is response, RC is response-compressed
+			this.sendText("RC" + (isJSON ? 'J' : 'T') + ':' + id + ":" + compressedText); // RU is response, RC is response-compressed. J is JSON and T is text
 		}
 
 		wsError (err) {
