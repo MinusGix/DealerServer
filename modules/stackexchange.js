@@ -7,7 +7,16 @@ module.exports = async (Data) => {
 
 		run (url) {},
 		async getQuestionAnswers (id, site="stackoverflow", filter="!WXiIETACIU-sfj1EnE7ERcE82xydEKEkmRQ*wJm") {
-			return (await Data.axios.get(`${this.apiURL}questions/8287167/answers?order=desc&sort=activity&site=${site}&filter=${filter}`)).data.items;
+			return (await Data.axios.get(`${this.apiURL}questions/${id}/answers?order=desc&sort=activity&site=${site}&filter=${filter}`)).data.items;
+		},
+		async getQuestionAndAnswers (id, site="stackoverflow", filter="!-y(KwOjRxMln-hCoHpVCNKfpWKRl1TJLxV*-Ji8na") {
+			try {
+				let res = await Data.axios.get(`${this.apiURL}questions/${id}?order=desc&sort=activity&site=${site}&filter=${filter}`);
+				console.log(res);
+				return res.data.items[0];
+			} catch (err) {
+				console.log(err);
+			}
 		},
 		parseURL (url) {
 			return {
