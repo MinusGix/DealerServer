@@ -85,7 +85,6 @@ let Data = {
 
 try {
 	let modules = await loadModules(Data);
-	console.log(modules);
 	modules.forEach(mod => Data.Modules[mod.name || mod.__filename] = mod);
 } catch (err) {
 	console.error('[ERROR] in loading main modules!');
