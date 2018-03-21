@@ -6,7 +6,7 @@ module.exports = async (Data) => {
 		apiURL: "https://api.stackexchange.com/2.2/",
 
 		run (url) {},
-		async getQuestionAnswers (id, site="stackoverflow", filter="!WXiIETACIU-sfj1EnE7ERcE82xydEKEkmRQ*wJm") {
+		async getQuestionAnswers (id, site="stackoverflow", filter="!t)HOqwbcu.kaaxuI(k5c7Ot5FT-Ydf5") {
 			return (await Data.axios.get(`${this.apiURL}questions/${id}/answers?order=desc&sort=activity&site=${site}&filter=${filter}`)).data.items;
 		},
 		async getQuestionAndAnswers (id, site="stackoverflow", filter="!-y(KwOjRxMln-hCoHpVCNKfpWKRl1TJLxV*-Ji8na") {
