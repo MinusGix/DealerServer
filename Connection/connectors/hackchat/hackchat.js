@@ -3,12 +3,8 @@ module.exports = {
 	name: 'hackchat',
 	
 	state: {
-		websocketURL: 'wss://hack.chat/chat-ws',
-		channel: 'botDev',
-		username: 'Transferance',
-		password: "Transfer the communism away from me please.",
-
-		pingInterval: 0,
+		config: {},
+		pingInterval: null,
 		ws: null,
 	},
 
@@ -21,6 +17,12 @@ module.exports = {
 		
 		this._Client = Client;
 		this._Data = Data;
+
+		try {
+			this.state.config = await Data.readJSON(__dirname + "/config.json");
+		} catch (err) {
+			throw new Error("Problem in loading hackchat connector config." + err.toString());
+		}
 	},
 
 	async connect () {
@@ -28,7 +30,7 @@ module.exports = {
 			this.kill();
 		}
 
-		this.state.ws = new this._WebSocket(this.state.websocketURL);
+		this.state.ws = new this._WebSocket(this.state.config.websocketURL);
 		this.state.ws.on('open', this._copen());
 		this.state.ws.on('message', this._Client.creceive()); // do this
 		this.state.ws.on('error', this._error);
@@ -112,13 +114,13 @@ module.exports = {
 	_join () {
 		this._send({
 			cmd: 'join',
-			nick: this.state.username + (this.state.password ? '#' + this.state.password : ''),
-			channel: this.state.channel
+			nick: this.state.config.username + (this.state.config.password ? '#' + this.state.config.password : ''),
+			channel: this.state.config.channel
 		});
 	},
 
 	_error (err) {
-		console.error('[ERROR] Error in client with username of "' + this.state.username + '" ', err.toString());
-		this.emit('hc;websocket:error', err, this);
+		console.error('[ERROR] Error in client with username of "' + this.state.config.username + '" ', err.toString());
+		this.emit('hc:websocket:error', err, this);
 	}
 };

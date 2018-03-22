@@ -15,19 +15,36 @@ module.exports = async (Data) => {
 
 			this.connector = null;
 
-			this.loadConnector();
-
-			this.loadModules()
-					.then(_ => this.connect())
-					.catch(err => console.log('[ERROR] Problem with reading directory when loading the modules!', err))
+			this.load()
+				.then(_ => console.log('All loaded'))
+				.catch(err => console.log('[ERROR] Problem with loading Connection files! ' + err.toString()))
 		}
 
-		loadConnector () { // todo: add subconnectors
+		async load () {
+			try {
+				await this.loadConnector();
+			} catch (connectorError) {
+				throw connectorError;
+			}
+			
+			console.log('Loaded Connector');
+
+			try {
+				this.loadModules()
+			} catch (moduleError) {
+				throw moduleError;
+			}
+			
+			console.log("Loaded Connection Modules");
+			this.connect();
+		}
+
+		async loadConnector () { // todo: add subconnectors
 			let connectorList = ConnectionConfig.connector; 
 
 			let connector = require(__dirname + '/connectors/' + connectorList[0]);
 			
-			connector.init(Data, this);
+			await connector.init(Data, this);
 
 			this.connector = connector;
 
