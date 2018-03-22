@@ -3,7 +3,7 @@ module.exports = {
 	run: async (Data, Client) => {
 		let answersTrigger = 'getstackexchangeanswers ';
 		let questionAndAnswersTrigger = 'getstackexchangequestion&answers ';
-		Client.on('websocket:message:request', async (req, id) => {
+		Client.on('message:request', async (req, id) => {
 			if (req.startsWith(answersTrigger)) {
 				let questionID = req.substring(answersTrigger.length);
 				Client.respond(id, await Data.Modules.stackexchange.getQuestionAnswers(questionID));

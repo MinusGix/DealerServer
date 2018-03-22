@@ -8,32 +8,34 @@ module.exports = async (Data) => {
 	}
 
 	class Connection extends EventEmitter {
-		constructor (
-			url=ConnectionConfig.defaults.websocketURL,
-			channel=ConnectionConfig.defaults.channel,
-			username=ConnectionConfig.defaults.username,
-			password=ConnectionConfig.defaults.password
-		) {
+		constructor () {
 			super();
-
-			this.websocketURL = url;
-			this.channel = channel;
-			this.username = username;
-			this.password = password;
-
-			this._ws = null;
-			this._pingInterval = null;
-			this._WebSocket = WebSocket;
 
 			this.modules = {};
 
+			this.connector = null;
+
+			this.loadConnector();
+
 			this.loadModules()
-				.then(_ => this.connect())
-				.catch(err => console.error('[ERROR] Problem with reading directory when loading the modules!', err));
+					.then(_ => this.connect())
+					.catch(err => console.log('[ERROR] Problem with reading directory when loading the modules!', err))
 		}
 
-		cdeclareModule (self) {
-			return self.declareModule.bind(self);
+		loadConnector () { // todo: add subconnectors
+			let connectorList = ConnectionConfig.connector; 
+
+			let connector = require(__dirname + '/connectors/' + connectorList[0]);
+			
+			connector.init(Data, this);
+
+			this.connector = connector;
+
+			return connector;
+		}
+
+		cdeclareModule () {
+			return this.declareModule.bind(this);
 		}
 
 		async declareModule (mod) {
@@ -54,7 +56,7 @@ module.exports = async (Data) => {
 				files
 					.filter(file => file.endsWith('.js'))
 					.map(file => require(__dirname + '/modules/' + file))
-					.forEach(this.cdeclareModule(this));
+					.forEach(this.cdeclareModule());
 				
 				resolve();
 			}))
@@ -63,76 +65,45 @@ module.exports = async (Data) => {
 		connect () {
 			this.emit('pre:connecting', this);
 
-			if (this._ws instanceof this._WebSocket) {
-				this.killSocket();
+			if (typeof(this.connector.connect) === 'function') {
+				this.connector.connect();
 			}
-
-			this._ws = new WebSocket(this.websocketURL);
-			this._ws.on('open', this.wsOpen.bind(this));
-			this._ws.on('message', this.wsMessage.bind(this));
-			this._ws.on('error', this.wsError.bind(this));
 
 			this.emit('after:connecting', this);
 		}
 
-		killSocket () {
-			this.emit('pre:close:websocket', this);
-			clearInterval(this._pingInterval);
-			this._pingInterval = null;
-			this._ws.close();
-			this._ws = null;
-			this.emit('after:close:websocket', this);
+		creceive () {
+			return this.receive.bind(this);
 		}
+		async receive (data) { // data is of unknown type, the connector will let us know if it's useful and if we should continue with it
+			if (typeof(this.connector.parseData) === 'function') { // run the function on the data, assume the data is fine by itself if the function doesn't exist
+				data = await this.connector.parseData(data);
+			}
 
-		send (obj) {
-			if (this._ws.readyState === this._ws.OPEN) {
-				try {
-					this._ws.send(JSON.stringify(obj));
-				} catch (err) {
-					console.error('[ERROR] Problem in sending (or Stringifying) obj. ', obj, err);
+			if (typeof(this.connector.dataShouldBeUsed) === 'function') { // run the function on the data, assume the data is fine if it doesn't exist
+				if (!(await this.connector.dataShouldBeUsed(data))) {
+				//	return; // data is not to be used for anything, rip
 				}
 			}
-		}
-		sendText (text) {
-			return this.send({ cmd: 'chat', text });
-		}
-		sendInvite (nick) {
-			return this.send({ cmd: 'invite', nick});
-		}
-		sendJoin () {
-			return this.send({
-				cmd: 'join',
-				nick: this.username + (this.password ? '#' + this.password : ''),
-				channel: this.channel
-			});
-		}
-		sendPing () {
-			return this.send({ cmd: 'ping' });
-		}
 
-		wsOpen () {
-			console.log('Socket open');
-			this._pingInterval = setInterval(_ => this.sendPing(), 50000);
-			this.sendJoin();
-			this.emit('websocket:open', this);
-		}
+			let text = data; // assume data is fine as text if the function doesn't exist
 
-		wsMessage (message) {
-			try {
-				var args = JSON.parse(message);
-			} catch (err) {
-				return console.error("[ERROR] in parsing a message from the server. ", message);
+			if (typeof(this.connector.grabText) === 'function') {
+				text = await this.connector.grabText(data);
 			}
-
-			this.emit('websocket:message', args, this);
-
-			this.emit('websocket:message:' + args.cmd, args, this);
-
-			if (args.cmd === 'chat' && args.nick === 'DealerClient' && args.text.startsWith("REQUEST:")) {
-				let id = args.text.substring(8);
+			if (text.startsWith('REQUEST:')) {
+				let id = text.substring(8);
 				id = id.substring(0, id.indexOf(':'));
 
-				this.emit('websocket:message:request', args.text.substring(8 + id.length + 1), id, args, this);
+				this.emit('message:request', text.substring(8 + id.length + 1), id, data, this);
+			}
+		}
+
+		sendText (text) {
+			if (typeof(this.connector.sendText) === 'function') {
+				this.connector.sendText(text);
+			} else {
+				console.log('[WARN] The connector named "' + (this.connector.name || 'UNNAMED CONNECTOR') + '" does not have a function to send text.');
 			}
 		}
 
@@ -150,11 +121,6 @@ module.exports = async (Data) => {
 			let compressedText = Data.compress(text);
 			console.log('RESPONDING\n\tORIGINAL TEXT: ' + text.length + '\n\tCOMPRESSED TEXT: ' + compressedText.length);
 			this.sendText("RC" + (isJSON ? 'J' : 'T') + ':' + id + ":" + compressedText); // RU is response, RC is response-compressed. J is JSON and T is text
-		}
-
-		wsError (err) {
-			console.error('[ERROR] Error in client with username of "' + this.username + '" ', err.toString());
-			this.emit('websocket:error', err, this);
 		}
 	}
 
