@@ -47,6 +47,15 @@ module.exports = async (Data) => {
 			await connector.init(Data, this);
 
 			this.connector = connector;
+			this.connectorModifiers = [];
+
+			for (let i = 1; i < connectorList.length; i++) {
+				let connectorModifier = require(__dirname + '/connectors/' + connectorList[i]);
+
+				await connectorModifier.init(Data, this);
+
+				this.connectorModifiers.push(connectorModifier);
+			}
 
 			return connector;
 		}
