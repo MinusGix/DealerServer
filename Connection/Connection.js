@@ -1,5 +1,5 @@
 module.exports = async (Data) => {
-	let { readJSON, EventEmitter, WebSocket, fs } = Data;
+	let { readJSON, EventEmitter, fs } = Data;
 	
 	try {
 		var ConnectionConfig = await readJSON(__dirname + "/config.json");

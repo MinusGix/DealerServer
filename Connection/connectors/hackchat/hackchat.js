@@ -12,12 +12,11 @@ module.exports = {
 		ws: null,
 	},
 
-	_WebSocket: null,
+	_WebSocket: require('ws'),
 	_Client: null,
 	_Data: null,
 
 	async init (Data, Client) {
-		this._WebSocket = Data.WebSocket;
 		this.state.ws = null;
 		
 		this._Client = Client;

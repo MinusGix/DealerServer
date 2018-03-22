@@ -1,5 +1,4 @@
 (async () => {
-const WebSocket = require('ws');
 const fs = require('fs');
 const EventEmitter = require('events');
 const Nightmare = require('nightmare');
@@ -68,7 +67,6 @@ try {
 
 let Data = {
 	Config,
-	WebSocket,
 	fs,
 	EventEmitter,
 	Nightmare,

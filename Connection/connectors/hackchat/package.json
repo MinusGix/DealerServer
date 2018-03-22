@@ -1,0 +1,14 @@
+{
+  "name": "dealer-hackchat",
+  "version": "1.0.0",
+  "description": "",
+  "main": "hackchat.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "MinusGix",
+  "license": "ISC",
+  "dependencies": {
+    "ws": "^5.1.0"
+  }
+}
