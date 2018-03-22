@@ -12,7 +12,6 @@ module.exports = async (Data) => {
 		async getQuestionAndAnswers (id, site="stackoverflow", filter="!-y(KwOjRxMln-hCoHpVCNKfpWKRl1TJLxV*-Ji8na") {
 			try {
 				let res = await Data.axios.get(`${this.apiURL}questions/${id}?order=desc&sort=activity&site=${site}&filter=${filter}`);
-				console.log(res);
 				return res.data.items[0];
 			} catch (err) {
 				console.log(err);
